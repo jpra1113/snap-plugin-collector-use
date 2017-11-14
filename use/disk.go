@@ -15,20 +15,21 @@ import (
 
 // DiskStat struct for storing disk metric Data
 type DiskStat struct {
-	last     int64
-	current  int64
-	diskName string
+	last         int64
+	current      int64
+	diskName     string
+	diskStatPath string
 }
 
 // Utilization returns utilization of Disk Device
 func (d *DiskStat) Utilization() (float64, error) {
 	var err error
-	d.last, err = readStatForDisk(d.diskName, "timeio")
+	d.last, err = readStatForDisk(d.diskName, "timeio", d.diskStatPath)
 	if err != nil {
 		return 0.0, err
 	}
 	time.Sleep(waitTime)
-	d.current, err = readStatForDisk(d.diskName, "timeio")
+	d.current, err = readStatForDisk(d.diskName, "timeio", d.diskStatPath)
 	if err != nil {
 		return 0.0, err
 	}
@@ -38,11 +39,11 @@ func (d *DiskStat) Utilization() (float64, error) {
 // Saturation returns saturation of Disk Device
 func (d *DiskStat) Saturation() (float64, error) {
 	var err error
-	d.last, err = readStatForDisk(d.diskName, "weightedtimeio")
+	d.last, err = readStatForDisk(d.diskName, "weightedtimeio", d.diskStatPath)
 	if err != nil {
 		return 0.0, err
 	}
-	d.current, err = readStatForDisk(d.diskName, "weightedtimeio")
+	d.current, err = readStatForDisk(d.diskName, "weightedtimeio", d.diskStatPath)
 	if err != nil {
 		return 0.0, err
 	}
@@ -73,7 +74,7 @@ func listDisks() []string {
 	return ret
 }
 
-func readStatForDisk(diskName string, statType string) (int64, error) {
+func readStatForDisk(diskName string, statType string, diskStatPath string) (int64, error) {
 	lines, err := readLines(diskStatPath)
 	if err != nil {
 		return 0, err
@@ -97,7 +98,7 @@ func (u *Use) diskStat(ns core.Namespace) (*plugin.MetricType, error) {
 	diskName := ns.Strings()[3]
 	switch {
 	case regexp.MustCompile(`^/intel/use/storage/.*/utilization$`).MatchString(ns.String()):
-		diskStat := DiskStat{diskName: diskName}
+		diskStat := DiskStat{diskName: diskName, diskStatPath: u.diskStatPath}
 		metric, err := diskStat.Utilization()
 		if err != nil {
 			return nil, err
@@ -107,7 +108,7 @@ func (u *Use) diskStat(ns core.Namespace) (*plugin.MetricType, error) {
 			Data_:      metric,
 		}, nil
 	case regexp.MustCompile(`^/intel/use/storage/.*/saturation$`).MatchString(ns.String()):
-		diskStat := DiskStat{diskName: diskName}
+		diskStat := DiskStat{diskName: diskName, diskStatPath: u.diskStatPath}
 		metric, err := diskStat.Saturation()
 		if err != nil {
 			return nil, err

@@ -33,8 +33,9 @@ import (
 
 // CPUStat contains values of CPU previous measurments
 type CPUStat struct {
-	last    map[string]int64
-	current map[string]int64
+	last        map[string]int64
+	current     map[string]int64
+	cpuStatPath string
 }
 
 // LoadAvg struct with Host Load Statistics
@@ -48,12 +49,12 @@ type LoadAvg struct {
 func (c *CPUStat) Utilization() (float64, error) {
 	var err error
 
-	c.last, err = readCPUStat()
+	c.last, err = readCPUStat(c.cpuStatPath)
 	if err != nil {
 		return 0.0, err
 	}
 	time.Sleep(waitTime)
-	c.current, err = readCPUStat()
+	c.current, err = readCPUStat(c.cpuStatPath)
 	if err != nil {
 		return 0.0, err
 	}
@@ -84,10 +85,9 @@ func (c *CPUStat) NonIdle(actual bool) float64 {
 }
 
 func (p *Use) computeStat(ns core.Namespace) (*plugin.MetricType, error) {
-
 	switch {
 	case regexp.MustCompile(`^/intel/use/compute/utilization`).MatchString(ns.String()):
-		cpuStat := CPUStat{}
+		cpuStat := CPUStat{cpuStatPath: p.cpuStatPath}
 		metric, err := cpuStat.Utilization()
 		if err != nil {
 			return nil, err
@@ -97,7 +97,7 @@ func (p *Use) computeStat(ns core.Namespace) (*plugin.MetricType, error) {
 			Data_:      metric,
 		}, nil
 	case regexp.MustCompile(`^/intel/use/compute/saturation`).MatchString(ns.String()):
-		metric, err := getSaturation()
+		metric, err := getSaturation(p.loadAvgPath)
 		if err != nil {
 			return nil, err
 		}
@@ -118,20 +118,20 @@ func getCPUMetricTypes() ([]plugin.MetricType, error) {
 	return mts, nil
 }
 
-func getSaturation() (float64, error) {
+func getSaturation(loadAvgPath string) (float64, error) {
 	cpus, err := cpu.Times(true)
 	if err != nil {
 		return 0, err
 	}
 	cpuCount := len(cpus)
-	load, err := readLoad()
+	load, err := readLoad(loadAvgPath)
 	if err != nil {
 		return 0, err
 	}
 	return load.Load1 / float64(cpuCount), nil
 }
 
-func readLoad() (*LoadAvg, error) {
+func readLoad(loadAvgPath string) (*LoadAvg, error) {
 	filename := loadAvgPath
 	lines, err := readLines(filename)
 	load := &LoadAvg{}
@@ -149,7 +149,7 @@ func readLoad() (*LoadAvg, error) {
 	return load, nil
 }
 
-func readCPUStat() (map[string]int64, error) {
+func readCPUStat(cpuStatPath string) (map[string]int64, error) {
 	content, err := readLines(cpuStatPath)
 	if err != nil {
 		return nil, err

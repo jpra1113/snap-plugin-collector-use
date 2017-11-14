@@ -1,14 +1,14 @@
 hash: f976802588fa8a8dbe2a128534d2161aef1db2ffbe102bfcac7ffecfd8715dbb
-updated: 2017-11-02T04:36:15.322480007+08:00
+updated: 2017-11-13T22:19:57.628131279-08:00
 imports:
 - name: github.com/asaskevich/govalidator
   version: 9699ab6b38bee2e02cd3fe8b99ecf67665395c96
 - name: github.com/go-ole/go-ole
-  version: 2ecd927eaf828c4fc088fae349b28eed1480ff56
+  version: a41e3c4b706f6ae8dfbff342b06e40fa4d2d0506
   subpackages:
   - oleutil
 - name: github.com/intelsdi-x/snap
-  version: 79e1dd457d77c985491c2f4746cbc425fb3dc2dd
+  version: bc738d5648e2288b0895c1d7c545edcfbcd4124f
   subpackages:
   - control/plugin
   - control/plugin/cpolicy
@@ -28,7 +28,7 @@ imports:
 - name: github.com/robfig/cron
   version: 32d9c273155a0506d27cf73dd1246e86a470997e
 - name: github.com/shirou/gopsutil
-  version: 6e221c482653ef05c9f6a7bf71ddceea0e40bac5
+  version: 48fc5612898a1213aa5d6a0fb2d4f7b968e898fb
   subpackages:
   - cpu
   - host
@@ -38,12 +38,12 @@ imports:
   - process
 - name: github.com/shirou/w32
   version: bb4de0191aa41b5507caa14b0650cdbddcd9280b
-- name: github.com/sirupsen/logrus
+- name: github.com/Sirupsen/logrus
   version: be52937128b38f1d99787bb476c789e2af1147f1
 - name: github.com/StackExchange/wmi
   version: ea383cf3ba6ec950874b8486cd72356d007c768f
 - name: golang.org/x/sys
-  version: c8bc69bc2db9c57ccf979550bc69655df5039a8a
+  version: 062cd7e4e68206d8bab9b18396626e855c992658
   subpackages:
   - unix
   - windows
@@ -51,13 +51,13 @@ imports:
   version: c1cd2254a6dd314c9d73c338c12688c9325d85c6
 testImports:
 - name: github.com/gopherjs/gopherjs
-  version: 4b53e1bddba0e2f734514aeb6c02db652f4c6fe8
+  version: b40cd48c38f9a18eb3db20d163bad78de12cf0b7
   subpackages:
   - js
 - name: github.com/jtolds/gls
-  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
+  version: 77f18212c9c7edc9bd6a33d383a7b545ce62f064
 - name: github.com/smartystreets/assertions
-  version: 4ea54c1f28ad3ae597e76607dea3871fa177e263
+  version: 9c0ea8acbc1d8ad689f9e6fe0c1fa5838e0cabc2
   subpackages:
   - internal/go-render/render
   - internal/oglematchers

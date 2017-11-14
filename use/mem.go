@@ -14,15 +14,17 @@ import (
 
 // MemInfo struct for storing IO Data
 type MemInfo struct {
-	MemTotal float64
-	MemFree  float64
-	SwapIn   float64
-	SwapOut  float64
+	MemTotal    float64
+	MemFree     float64
+	SwapIn      float64
+	SwapOut     float64
+	vmStatPath  string
+	memInfoPath string
 }
 
 // Utilization returns utilization of Memory
 func (m *MemInfo) Utilization() (float64, error) {
-	memInfo, err := readStatForMemInfo()
+	memInfo, err := readStatForMemInfo(m.memInfoPath)
 
 	if err != nil {
 		return 0.0, err
@@ -39,7 +41,7 @@ func (m *MemInfo) Utilization() (float64, error) {
 
 // Saturation returns saturation of Memory
 func (m *MemInfo) Saturation() (float64, error) {
-	memInfo, err := readStatForVMStat()
+	memInfo, err := readStatForVMStat(m.vmStatPath)
 	if err != nil {
 		return 0.0, err
 	}
@@ -61,10 +63,10 @@ func getMemMetricTypes() ([]plugin.MetricType, error) {
 	return mts, nil
 }
 
-func memStat(ns core.Namespace) (*plugin.MetricType, error) {
+func memStat(ns core.Namespace, vmStatPath string, memInfoPath string) (*plugin.MetricType, error) {
 	switch {
 	case regexp.MustCompile(`^/intel/use/memory/utilization$`).MatchString(ns.String()):
-		m := MemInfo{}
+		m := MemInfo{vmStatPath: vmStatPath, memInfoPath: memInfoPath}
 		metric, err := m.Utilization()
 		if err != nil {
 			return nil, err
@@ -75,7 +77,7 @@ func memStat(ns core.Namespace) (*plugin.MetricType, error) {
 		}, nil
 
 	case regexp.MustCompile(`^/intel/use/memory/saturation$`).MatchString(ns.String()):
-		m := MemInfo{}
+		m := MemInfo{vmStatPath: vmStatPath, memInfoPath: memInfoPath}
 		metric, err := m.Saturation()
 		if err != nil {
 			return nil, err
@@ -89,7 +91,7 @@ func memStat(ns core.Namespace) (*plugin.MetricType, error) {
 	return nil, fmt.Errorf("Unknown error processing %v", ns)
 }
 
-func readStatForMemInfo() (map[string]int64, error) {
+func readStatForMemInfo(memInfoPath string) (map[string]int64, error) {
 	lines, err := readLines(memInfoPath)
 	ret := make(map[string]int64, 2)
 	if err != nil {
@@ -120,7 +122,7 @@ func readStatForMemInfo() (map[string]int64, error) {
 	return ret, nil
 }
 
-func readStatForVMStat() (map[string]int64, error) {
+func readStatForVMStat(vmStatPath string) (map[string]int64, error) {
 	filename := vmStatPath
 	ret := make(map[string]int64, 2)
 	lines, err := readLines(filename)

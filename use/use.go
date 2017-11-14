@@ -25,6 +25,7 @@ import (
 
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
+	"github.com/intelsdi-x/snap/core/ctypes"
 )
 
 const (
@@ -38,22 +39,25 @@ const (
 )
 
 var (
-	procPath     = "/proc"
-	sysFsNetPath = "/sys/class/net"
-	diskStatPath = filepath.Join(procPath, "diskstats")
-	cpuStatPath  = filepath.Join(procPath, "stat")
-	loadAvgPath  = filepath.Join(procPath, "loadavg")
-	memInfoPath  = filepath.Join(procPath, "meminfo")
-	vmStatPath   = filepath.Join(procPath, "vmstat")
 	metricLabels = []string{
 		"utilization",
 		"saturation",
 	}
+	cpure  = regexp.MustCompile(`^/intel/use/compute/.*`)
+	storre = regexp.MustCompile(`^/intel/use/storage/.*`)
+	memre  = regexp.MustCompile(`^/intel/use/memory/.*`)
 )
 
 // Use contains values of previous measurments
 type Use struct {
-	host string
+	host         string
+	initialized  bool
+	procPath     string
+	diskStatPath string
+	cpuStatPath  string
+	loadAvgPath  string
+	memInfoPath  string
+	vmStatPath   string
 }
 
 // Meta returns name, version and plugin type
@@ -63,17 +67,28 @@ func Meta() *plugin.PluginMeta {
 
 // NewUseCollector returns Use struct
 func NewUseCollector() *Use {
-
 	return &Use{}
+}
+
+func (u *Use) init(table map[string]ctypes.ConfigValue) {
+	procPath := "/proc"
+	procPathValue, ok := table["proc_path"]
+	if ok {
+		procPath = procPathValue.(ctypes.ConfigValueStr).Value
+	}
+	u.procPath = procPath
+
+	u.diskStatPath = filepath.Join(procPath, "diskstats")
+	u.cpuStatPath = filepath.Join(procPath, "stat")
+	u.loadAvgPath = filepath.Join(procPath, "loadavg")
+	u.memInfoPath = filepath.Join(procPath, "meminfo")
+	u.vmStatPath = filepath.Join(procPath, "vmstat")
+	u.initialized = true
 }
 
 // CollectMetrics returns Use metrics
 func (u *Use) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
 	metrics := make([]plugin.MetricType, len(mts))
-	cpure := regexp.MustCompile(`^/intel/use/compute/.*`)
-	netre := regexp.MustCompile(`^/intel/use/network/.*`)
-	storre := regexp.MustCompile(`^/intel/use/storage/.*`)
-	memre := regexp.MustCompile(`^/intel/use/memory/.*`)
 
 	for i, p := range mts {
 		ns := p.Namespace().String()
@@ -85,13 +100,6 @@ func (u *Use) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, erro
 			}
 			metrics[i] = *metric
 
-		case netre.MatchString(ns):
-			metric, err := u.networkStat(p.Namespace())
-			if err != nil {
-				return nil, err
-			}
-
-			metrics[i] = *metric
 		case storre.MatchString(ns):
 			metric, err := u.diskStat(p.Namespace())
 			if err != nil {
@@ -99,7 +107,7 @@ func (u *Use) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, erro
 			}
 			metrics[i] = *metric
 		case memre.MatchString(ns):
-			metric, err := memStat(p.Namespace())
+			metric, err := memStat(p.Namespace(), u.vmStatPath, u.memInfoPath)
 			if err != nil {
 				return nil, err
 			}
@@ -117,7 +125,11 @@ func (u *Use) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, erro
 }
 
 // GetMetricTypes returns the metric types exposed by use plugin
-func (u *Use) GetMetricTypes(_ plugin.ConfigType) ([]plugin.MetricType, error) {
+func (u *Use) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error) {
+	if !u.initialized {
+		u.init(cfg.Table())
+	}
+
 	mts := []plugin.MetricType{}
 
 	cpu, err := getCPUMetricTypes()
@@ -125,11 +137,6 @@ func (u *Use) GetMetricTypes(_ plugin.ConfigType) ([]plugin.MetricType, error) {
 		return nil, err
 	}
 	mts = append(mts, cpu...)
-	net, err := getNetIOCounterMetricTypes()
-	if err != nil {
-		return nil, err
-	}
-	mts = append(mts, net...)
 	disk, err := getDiskMetricTypes()
 	if err != nil {
 		return nil, err
@@ -148,7 +155,12 @@ func (u *Use) GetMetricTypes(_ plugin.ConfigType) ([]plugin.MetricType, error) {
 func (u *Use) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	cp := cpolicy.New()
 	config := cpolicy.NewPolicyNode()
-	cp.Add([]string{""}, config)
+	rule, err := cpolicy.NewStringRule("proc_path", false, "/proc")
+	if err != nil {
+		return nil, err
+	}
+	config.Add(rule)
+	cp.Add([]string{"intel", "use"}, config)
 
 	return cp, nil
 }
@@ -157,5 +169,4 @@ func handleErr(e error) {
 		panic(e)
 
 	}
-
 }
