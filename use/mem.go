@@ -1,15 +1,13 @@
 package use
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"fmt"
-
-	"github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/core"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"github.com/pkg/errors"
 )
 
 // MemInfo struct for storing IO Data
@@ -36,7 +34,7 @@ func (m *MemInfo) Utilization() (float64, error) {
 	if m.MemTotal >= 0 {
 		return 100.0 - (m.MemFree / m.MemTotal * 100), nil
 	}
-	return 0.0, errors.New("Error Total Memory is lower or equal 0")
+	return 0.0, errors.Errorf("Error Total Memory is lower or equal 0")
 }
 
 // Saturation returns saturation of Memory
@@ -54,41 +52,41 @@ func (m *MemInfo) Saturation() (float64, error) {
 	return 0.0, nil
 }
 
-func getMemMetricTypes() ([]plugin.MetricType, error) {
-	var mts []plugin.MetricType
+func getMemMetricTypes() ([]plugin.Metric, error) {
+	var mts []plugin.Metric
 	for _, name := range metricLabels {
 
-		mts = append(mts, plugin.MetricType{Namespace_: core.NewNamespace("intel", "use", "memory", name)})
+		mts = append(mts, plugin.Metric{Namespace: plugin.NewNamespace("intel", "use", "memory", name)})
 	}
 	return mts, nil
 }
 
-func memStat(ns core.Namespace, vmStatPath string, memInfoPath string) (*plugin.MetricType, error) {
+func memStat(ns plugin.Namespace, vmStatPath string, memInfoPath string) (*plugin.Metric, error) {
 	switch {
 	case regexp.MustCompile(`^/intel/use/memory/utilization$`).MatchString(ns.String()):
 		m := MemInfo{vmStatPath: vmStatPath, memInfoPath: memInfoPath}
 		metric, err := m.Utilization()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("Unable to get memory utilization: %s", err.Error())
 		}
-		return &plugin.MetricType{
-			Namespace_: ns,
-			Data_:      metric,
+		return &plugin.Metric{
+			Namespace: ns,
+			Data:      metric,
 		}, nil
 
 	case regexp.MustCompile(`^/intel/use/memory/saturation$`).MatchString(ns.String()):
 		m := MemInfo{vmStatPath: vmStatPath, memInfoPath: memInfoPath}
 		metric, err := m.Saturation()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("Unable to get memory saturation: %s", err.Error())
 		}
 
-		return &plugin.MetricType{
-			Namespace_: ns,
-			Data_:      metric,
+		return &plugin.Metric{
+			Namespace: ns,
+			Data:      metric,
 		}, nil
 	}
-	return nil, fmt.Errorf("Unknown error processing %v", ns)
+	return nil, fmt.Errorf("Unknown memory namespace processing %v", ns)
 }
 
 func readStatForMemInfo(memInfoPath string) (map[string]int64, error) {
@@ -102,19 +100,16 @@ func readStatForMemInfo(memInfoPath string) (map[string]int64, error) {
 		if len(fields) > 0 {
 			key := strings.TrimSpace(fields[0])
 			value := strings.TrimSpace(fields[1])
-			if err != nil {
-				return ret, err
-			}
 			switch key {
 			case "MemTotal:":
 				ret["MemTotal"], err = strconv.ParseInt(value, 10, 64)
 				if err != nil {
-					return ret, err
+					return ret, errors.Errorf("Unable to parse int from mem total %s: %s", value, err.Error())
 				}
 			case "MemFree:":
 				ret["MemFree"], err = strconv.ParseInt(value, 10, 64)
 				if err != nil {
-					return ret, err
+					return ret, errors.Errorf("Unable to parse int from mem free %s: %s", value, err.Error())
 				}
 			}
 		}

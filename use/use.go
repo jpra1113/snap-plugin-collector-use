@@ -19,13 +19,14 @@ limitations under the License.
 package use
 
 import (
+	"errors"
+	"os"
 	"path/filepath"
 	"regexp"
 	"time"
 
-	"github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
-	"github.com/intelsdi-x/snap/core/ctypes"
+	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 )
 
 const (
@@ -33,9 +34,8 @@ const (
 	name = "Use"
 	// Version of plugin
 	version = 1
-	// Type of plugin
-	pluginType = plugin.CollectorPluginType
-	waitTime   = 10 * time.Millisecond
+
+	waitTime = 10 * time.Millisecond
 )
 
 var (
@@ -60,22 +60,23 @@ type Use struct {
 	vmStatPath   string
 }
 
-// Meta returns name, version and plugin type
-func Meta() *plugin.PluginMeta {
-	return plugin.NewPluginMeta(name, version, pluginType, []string{plugin.SnapGOBContentType}, []string{plugin.SnapGOBContentType})
-}
-
 // NewUseCollector returns Use struct
 func NewUseCollector() *Use {
 	return &Use{}
 }
 
-func (u *Use) init(table map[string]ctypes.ConfigValue) {
-	procPath := "/proc"
-	procPathValue, ok := table["proc_path"]
-	if ok {
-		procPath = procPathValue.(ctypes.ConfigValueStr).Value
+func (u *Use) init(cfg plugin.Config) {
+	f, err := os.OpenFile("/tmp/intel-collector-use", os.O_WRONLY|os.O_CREATE, 0755)
+	if err == nil {
+		log.SetOutput(f)
 	}
+
+	procPath, err := cfg.GetString("proc_path")
+	if err != nil {
+		procPath = "/proc"
+	}
+	log.Infof("Proc path from use collector is %s", procPath)
+
 	u.procPath = procPath
 
 	u.diskStatPath = filepath.Join(procPath, "diskstats")
@@ -87,64 +88,63 @@ func (u *Use) init(table map[string]ctypes.ConfigValue) {
 }
 
 // CollectMetrics returns Use metrics
-func (u *Use) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
-	metrics := make([]plugin.MetricType, len(mts))
-
+func (u *Use) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+	metrics := make([]plugin.Metric, len(mts))
 	for i, p := range mts {
-		ns := p.Namespace().String()
+		ns := p.Namespace.String()
 		switch {
 		case cpure.MatchString(ns):
-			metric, err := u.computeStat(p.Namespace())
+			metric, err := u.computeStat(p.Namespace)
 			if err != nil {
-				return nil, err
+				return nil, errors.New("Unable to get compute stat: " + err.Error())
 			}
 			metrics[i] = *metric
 
 		case storre.MatchString(ns):
-			metric, err := u.diskStat(p.Namespace())
+			metric, err := u.diskStat(p.Namespace)
 			if err != nil {
-				return nil, err
+				return nil, errors.New("Unable to get disk stat: " + err.Error())
 			}
 			metrics[i] = *metric
 		case memre.MatchString(ns):
-			metric, err := memStat(p.Namespace(), u.vmStatPath, u.memInfoPath)
+			metric, err := memStat(p.Namespace, u.vmStatPath, u.memInfoPath)
 			if err != nil {
-				return nil, err
+				return nil, errors.New("Unable to get mem stat: " + err.Error())
 			}
 			metrics[i] = *metric
 		}
 		tags, err := hostTags()
 
 		if err == nil {
-			metrics[i].Tags_ = tags
+			metrics[i].Tags = tags
 		}
-		metrics[i].Timestamp_ = time.Now()
+		metrics[i].Timestamp = time.Now()
 
 	}
 	return metrics, nil
 }
 
 // GetMetricTypes returns the metric types exposed by use plugin
-func (u *Use) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error) {
+func (u *Use) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 	if !u.initialized {
-		u.init(cfg.Table())
+		u.init(cfg)
 	}
 
-	mts := []plugin.MetricType{}
+	mts := []plugin.Metric{}
 
 	cpu, err := getCPUMetricTypes()
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Unable to get cpu metric types: " + err.Error())
 	}
 	mts = append(mts, cpu...)
 	disk, err := getDiskMetricTypes()
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Unable to get disk metric types: " + err.Error())
 	}
 	mts = append(mts, disk...)
 	mem, err := getMemMetricTypes()
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Unable to get mem metric types: " + err.Error())
 	}
 	mts = append(mts, mem...)
 
@@ -152,21 +152,8 @@ func (u *Use) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error)
 }
 
 //GetConfigPolicy returns a ConfigPolicy
-func (u *Use) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
-	cp := cpolicy.New()
-	config := cpolicy.NewPolicyNode()
-	rule, err := cpolicy.NewStringRule("proc_path", false, "/proc")
-	if err != nil {
-		return nil, err
-	}
-	config.Add(rule)
-	cp.Add([]string{"intel", "use"}, config)
-
-	return cp, nil
-}
-func handleErr(e error) {
-	if e != nil {
-		panic(e)
-
-	}
+func (u *Use) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+	policy := plugin.NewConfigPolicy()
+	policy.AddNewStringRule([]string{"intel", "use"}, "proc_path", false, plugin.SetDefaultString("/proc_host"))
+	return *policy, nil
 }

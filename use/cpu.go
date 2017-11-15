@@ -26,8 +26,7 @@ import (
 
 	"strconv"
 
-	"github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/core"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/shirou/gopsutil/cpu"
 )
 
@@ -84,7 +83,7 @@ func (c *CPUStat) NonIdle(actual bool) float64 {
 	return float64(c.last["user"] + c.last["nice"] + c.last["system"])
 }
 
-func (p *Use) computeStat(ns core.Namespace) (*plugin.MetricType, error) {
+func (p *Use) computeStat(ns plugin.Namespace) (*plugin.Metric, error) {
 	switch {
 	case regexp.MustCompile(`^/intel/use/compute/utilization`).MatchString(ns.String()):
 		cpuStat := CPUStat{cpuStatPath: p.cpuStatPath}
@@ -92,28 +91,28 @@ func (p *Use) computeStat(ns core.Namespace) (*plugin.MetricType, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &plugin.MetricType{
-			Namespace_: ns,
-			Data_:      metric,
+		return &plugin.Metric{
+			Namespace: ns,
+			Data:      metric,
 		}, nil
 	case regexp.MustCompile(`^/intel/use/compute/saturation`).MatchString(ns.String()):
 		metric, err := getSaturation(p.loadAvgPath)
 		if err != nil {
 			return nil, err
 		}
-		return &plugin.MetricType{
-			Namespace_: ns,
-			Data_:      metric,
+		return &plugin.Metric{
+			Namespace: ns,
+			Data:      metric,
 		}, nil
 	}
 
 	return nil, fmt.Errorf("Unknown error processing %v", ns)
 }
 
-func getCPUMetricTypes() ([]plugin.MetricType, error) {
-	var mts []plugin.MetricType
+func getCPUMetricTypes() ([]plugin.Metric, error) {
+	var mts []plugin.Metric
 	for _, name := range metricLabels {
-		mts = append(mts, plugin.MetricType{Namespace_: core.NewNamespace("intel", "use", "compute", name)})
+		mts = append(mts, plugin.Metric{Namespace: plugin.NewNamespace("intel", "use", "compute", name)})
 	}
 	return mts, nil
 }

@@ -1,15 +1,13 @@
 package use
 
 import (
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
-	"fmt"
-	"strconv"
-
-	"github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/core"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -51,12 +49,12 @@ func (d *DiskStat) Saturation() (float64, error) {
 	return float64(d.current-d.last) / 100.0, nil
 }
 
-func getDiskMetricTypes() ([]plugin.MetricType, error) {
-	var mts []plugin.MetricType
+func getDiskMetricTypes() ([]plugin.Metric, error) {
+	var mts []plugin.Metric
 
 	for _, diskName := range listDisks() {
 		for _, name := range metricLabels {
-			mts = append(mts, plugin.MetricType{Namespace_: core.NewNamespace("intel", "use", "storage", diskName, name)})
+			mts = append(mts, plugin.Metric{Namespace: plugin.NewNamespace("intel", "use", "storage", diskName, name)})
 		}
 
 	}
@@ -94,31 +92,31 @@ func readStatForDisk(diskName string, statType string, diskStatPath string) (int
 	return 0, fmt.Errorf("Can't find a disk %s.\n", diskName)
 }
 
-func (u *Use) diskStat(ns core.Namespace) (*plugin.MetricType, error) {
+func (u *Use) diskStat(ns plugin.Namespace) (*plugin.Metric, error) {
 	diskName := ns.Strings()[3]
 	switch {
 	case regexp.MustCompile(`^/intel/use/storage/.*/utilization$`).MatchString(ns.String()):
 		diskStat := DiskStat{diskName: diskName, diskStatPath: u.diskStatPath}
 		metric, err := diskStat.Utilization()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("Unable to get disk utilization: %s", err.Error())
 		}
-		return &plugin.MetricType{
-			Namespace_: ns,
-			Data_:      metric,
+		return &plugin.Metric{
+			Namespace: ns,
+			Data:      metric,
 		}, nil
 	case regexp.MustCompile(`^/intel/use/storage/.*/saturation$`).MatchString(ns.String()):
 		diskStat := DiskStat{diskName: diskName, diskStatPath: u.diskStatPath}
 		metric, err := diskStat.Saturation()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("Unable to get disk saturation: " + err.Error())
 		}
 
-		return &plugin.MetricType{
-			Namespace_: ns,
-			Data_:      float64(metric),
+		return &plugin.Metric{
+			Namespace: ns,
+			Data:      float64(metric),
 		}, nil
 	}
 
-	return nil, errors.Errorf("Unknown error processing %v", ns)
+	return nil, errors.Errorf("Unknown disk stat namespace %v", ns)
 }

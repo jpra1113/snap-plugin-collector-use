@@ -19,18 +19,24 @@ limitations under the License.
 package main
 
 import (
-	"os"
-	// Import use collector plugin implementation
+	"time"
+
 	"github.com/intelsdi-x/snap-plugin-collector-use/use"
-	// Import the snap plugin library
-	"github.com/intelsdi-x/snap/control/plugin"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+)
+
+const (
+	pluginName    = "use"
+	pluginVersion = 1
 )
 
 // plugin bootstrap
 func main() {
-	plugin.Start(
-		use.Meta(),
-		use.NewUseCollector(), // CollectorPlugin interface
-		os.Args[1],
+	plugin.StartCollector(
+		use.NewUseCollector(),
+		pluginName,
+		pluginVersion,
+		plugin.Exclusive(true),
+		plugin.CacheTTL(1*time.Second),
 	)
 }
