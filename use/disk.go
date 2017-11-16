@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"github.com/aasssddd/snap-plugin-lib-go/v1/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -96,7 +96,7 @@ func (u *Use) diskStat(ns plugin.Namespace) (*plugin.Metric, error) {
 	diskName := ns.Strings()[3]
 	switch {
 	case regexp.MustCompile(`^/intel/use/storage/.*/utilization$`).MatchString(ns.String()):
-		diskStat := DiskStat{diskName: diskName, diskStatPath: u.diskStatPath}
+		diskStat := DiskStat{diskName: diskName, diskStatPath: u.DiskStatPath}
 		metric, err := diskStat.Utilization()
 		if err != nil {
 			return nil, errors.Errorf("Unable to get disk utilization: %s", err.Error())
@@ -106,7 +106,7 @@ func (u *Use) diskStat(ns plugin.Namespace) (*plugin.Metric, error) {
 			Data:      metric,
 		}, nil
 	case regexp.MustCompile(`^/intel/use/storage/.*/saturation$`).MatchString(ns.String()):
-		diskStat := DiskStat{diskName: diskName, diskStatPath: u.diskStatPath}
+		diskStat := DiskStat{diskName: diskName, diskStatPath: u.DiskStatPath}
 		metric, err := diskStat.Saturation()
 		if err != nil {
 			return nil, errors.Errorf("Unable to get disk saturation: " + err.Error())

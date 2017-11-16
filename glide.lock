@@ -1,12 +1,22 @@
 hash: f976802588fa8a8dbe2a128534d2161aef1db2ffbe102bfcac7ffecfd8715dbb
-updated: 2017-11-13T22:19:57.628131279-08:00
+updated: 2017-11-16T01:07:04.216569239Z
 imports:
-- name: github.com/asaskevich/govalidator
-  version: 9699ab6b38bee2e02cd3fe8b99ecf67665395c96
+- name: github.com/aasssddd/snap-plugin-lib-go
+  version: 5dc768651f85c2bc4ce7f57bf940ee6050a1adf9
+  subpackages:
+  - v1/plugin
 - name: github.com/go-ole/go-ole
   version: a41e3c4b706f6ae8dfbff342b06e40fa4d2d0506
   subpackages:
   - oleutil
+- name: github.com/golang/protobuf
+  version: 11b8df160996e00fd4b55cbaafb3d84ec6d50fa8
+  subpackages:
+  - proto
+  - ptypes
+  - ptypes/any
+  - ptypes/duration
+  - ptypes/timestamp
 - name: github.com/intelsdi-x/snap
   version: bc738d5648e2288b0895c1d7c545edcfbcd4124f
   subpackages:
@@ -23,10 +33,15 @@ imports:
   - pkg/schedule
   - pkg/stringutils
   - scheduler/wmap
+- name: github.com/intelsdi-x/snap-plugin-lib-go
+  version: 39befbe4b489623fce1e809048eea52644f5cfea
+  subpackages:
+  - v1/plugin
+  - v1/plugin/rpc
+- name: github.com/julienschmidt/httprouter
+  version: 8c199fb6259ffc1af525cc3ad52ee60ba8359669
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
-- name: github.com/robfig/cron
-  version: 32d9c273155a0506d27cf73dd1246e86a470997e
 - name: github.com/shirou/gopsutil
   version: 48fc5612898a1213aa5d6a0fb2d4f7b968e898fb
   subpackages:
@@ -39,23 +54,71 @@ imports:
 - name: github.com/shirou/w32
   version: bb4de0191aa41b5507caa14b0650cdbddcd9280b
 - name: github.com/Sirupsen/logrus
-  version: be52937128b38f1d99787bb476c789e2af1147f1
+  version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/StackExchange/wmi
   version: ea383cf3ba6ec950874b8486cd72356d007c768f
+- name: github.com/urfave/cli
+  version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
+- name: golang.org/x/crypto
+  version: 7d9177d70076375b9a59c8fde23d52d9c4a7ecd5
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/net
+  version: 8351a756f30f1297fe94bbf4b767ec589c6ea6d0
+  subpackages:
+  - context
+  - http2
+  - http2/hpack
+  - idna
+  - internal/timeseries
+  - lex/httplex
+  - trace
 - name: golang.org/x/sys
   version: 062cd7e4e68206d8bab9b18396626e855c992658
   subpackages:
   - unix
   - windows
-- name: gopkg.in/yaml.v2
-  version: c1cd2254a6dd314c9d73c338c12688c9325d85c6
+- name: golang.org/x/text
+  version: 1cbadb444a806fd9430d14ad08967ed91da4fa0a
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+- name: google.golang.org/genproto
+  version: 595979c8a7bf586b2d293fb42246bf91a0b893d9
+  subpackages:
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: 401e0e00e4bb830a10496d64cd95e068c5bf50de
+  subpackages:
+  - balancer
+  - codes
+  - connectivity
+  - credentials
+  - grpclb/grpc_lb_v1/messages
+  - grpclog
+  - internal
+  - keepalive
+  - metadata
+  - naming
+  - peer
+  - resolver
+  - stats
+  - status
+  - tap
+  - transport
 testImports:
+- name: github.com/asaskevich/govalidator
+  version: 9699ab6b38bee2e02cd3fe8b99ecf67665395c96
 - name: github.com/gopherjs/gopherjs
   version: b40cd48c38f9a18eb3db20d163bad78de12cf0b7
   subpackages:
   - js
 - name: github.com/jtolds/gls
   version: 77f18212c9c7edc9bd6a33d383a7b545ce62f064
+- name: github.com/robfig/cron
+  version: 32d9c273155a0506d27cf73dd1246e86a470997e
 - name: github.com/smartystreets/assertions
   version: 9c0ea8acbc1d8ad689f9e6fe0c1fa5838e0cabc2
   subpackages:
@@ -67,3 +130,5 @@ testImports:
   - convey
   - convey/gotest
   - convey/reporting
+- name: gopkg.in/yaml.v2
+  version: c1cd2254a6dd314c9d73c338c12688c9325d85c6

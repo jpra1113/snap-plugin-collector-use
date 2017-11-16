@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"github.com/aasssddd/snap-plugin-lib-go/v1/plugin"
 	"github.com/pkg/errors"
 )
 

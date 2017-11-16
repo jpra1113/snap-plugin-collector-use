@@ -26,7 +26,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"github.com/aasssddd/snap-plugin-lib-go/v1/plugin"
 )
 
 const (
@@ -50,14 +50,14 @@ var (
 
 // Use contains values of previous measurments
 type Use struct {
-	host         string
+	Host         string
 	initialized  bool
-	procPath     string
-	diskStatPath string
-	cpuStatPath  string
-	loadAvgPath  string
-	memInfoPath  string
-	vmStatPath   string
+	ProcPath     string
+	DiskStatPath string
+	CpuStatPath  string
+	LoadAvgPath  string
+	MemInfoPath  string
+	VmStatPath   string
 }
 
 // NewUseCollector returns Use struct
@@ -66,29 +66,32 @@ func NewUseCollector() *Use {
 }
 
 func (u *Use) init(cfg plugin.Config) {
-	f, err := os.OpenFile("/tmp/intel-collector-use", os.O_WRONLY|os.O_CREATE, 0755)
+	f, err := os.OpenFile("/tmp/intel-collector-use", os.O_WRONLY|os.O_CREATE, 0666)
 	if err == nil {
 		log.SetOutput(f)
 	}
 
 	procPath, err := cfg.GetString("proc_path")
 	if err != nil {
-		procPath = "/proc"
+		procPath = "/proc_host"
 	}
-	log.Infof("Proc path from use collector is %s", procPath)
 
-	u.procPath = procPath
-
-	u.diskStatPath = filepath.Join(procPath, "diskstats")
-	u.cpuStatPath = filepath.Join(procPath, "stat")
-	u.loadAvgPath = filepath.Join(procPath, "loadavg")
-	u.memInfoPath = filepath.Join(procPath, "meminfo")
-	u.vmStatPath = filepath.Join(procPath, "vmstat")
+	u.ProcPath = procPath
+	u.DiskStatPath = filepath.Join(procPath, "diskstats")
+	u.CpuStatPath = filepath.Join(procPath, "stat")
+	u.LoadAvgPath = filepath.Join(procPath, "loadavg")
+	u.MemInfoPath = filepath.Join(procPath, "meminfo")
+	u.VmStatPath = filepath.Join(procPath, "vmstat")
 	u.initialized = true
 }
 
 // CollectMetrics returns Use metrics
 func (u *Use) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+	cfg := mts[0].Config
+	if !u.initialized {
+		u.init(cfg)
+	}
+
 	metrics := make([]plugin.Metric, len(mts))
 	for i, p := range mts {
 		ns := p.Namespace.String()
@@ -107,7 +110,7 @@ func (u *Use) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
 			}
 			metrics[i] = *metric
 		case memre.MatchString(ns):
-			metric, err := memStat(p.Namespace, u.vmStatPath, u.memInfoPath)
+			metric, err := memStat(p.Namespace, u.VmStatPath, u.MemInfoPath)
 			if err != nil {
 				return nil, errors.New("Unable to get mem stat: " + err.Error())
 			}

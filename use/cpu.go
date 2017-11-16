@@ -21,12 +21,12 @@ package use
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
-	"strconv"
-
-	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"github.com/aasssddd/snap-plugin-lib-go/v1/plugin"
+	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/cpu"
 )
 
@@ -50,12 +50,12 @@ func (c *CPUStat) Utilization() (float64, error) {
 
 	c.last, err = readCPUStat(c.cpuStatPath)
 	if err != nil {
-		return 0.0, err
+		return 0.0, errors.Errorf("Unable to read cpu stat: " + err.Error())
 	}
 	time.Sleep(waitTime)
 	c.current, err = readCPUStat(c.cpuStatPath)
 	if err != nil {
-		return 0.0, err
+		return 0.0, errors.Errorf("Unable to read cpu stat: " + err.Error())
 	}
 	deltaIdle := c.Idle(true) - c.Idle(false)
 	deltaNonIdle := c.NonIdle(true) - c.NonIdle(false)
@@ -86,19 +86,19 @@ func (c *CPUStat) NonIdle(actual bool) float64 {
 func (p *Use) computeStat(ns plugin.Namespace) (*plugin.Metric, error) {
 	switch {
 	case regexp.MustCompile(`^/intel/use/compute/utilization`).MatchString(ns.String()):
-		cpuStat := CPUStat{cpuStatPath: p.cpuStatPath}
+		cpuStat := CPUStat{cpuStatPath: p.CpuStatPath}
 		metric, err := cpuStat.Utilization()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("Unable to get cpu stat utilization: " + err.Error())
 		}
 		return &plugin.Metric{
 			Namespace: ns,
 			Data:      metric,
 		}, nil
 	case regexp.MustCompile(`^/intel/use/compute/saturation`).MatchString(ns.String()):
-		metric, err := getSaturation(p.loadAvgPath)
+		metric, err := getSaturation(p.LoadAvgPath)
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("Unable to get cpu saturation: " + err.Error())
 		}
 		return &plugin.Metric{
 			Namespace: ns,
@@ -151,14 +151,15 @@ func readLoad(loadAvgPath string) (*LoadAvg, error) {
 func readCPUStat(cpuStatPath string) (map[string]int64, error) {
 	content, err := readLines(cpuStatPath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("Unable to read lines from cpu stat path %s: %s", cpuStatPath, err.Error())
 	}
 
 	CPUStat := strings.Fields(content[0])
 	values, err := mapCPUStat(CPUStat)
 	if err != nil {
-		return map[string]int64{}, err
+		return map[string]int64{}, errors.Errorf("Unable to map cpu stat: %s", err.Error())
 	}
+
 	return values, nil
 }
 

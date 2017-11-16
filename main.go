@@ -19,15 +19,15 @@ limitations under the License.
 package main
 
 import (
-	"time"
-
+	"github.com/aasssddd/snap-plugin-lib-go/v1/plugin"
 	"github.com/intelsdi-x/snap-plugin-collector-use/use"
-	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"google.golang.org/grpc"
 )
 
 const (
-	pluginName    = "use"
-	pluginVersion = 1
+	pluginName     = "use"
+	pluginVersion  = 1
+	maxMessageSize = 100 << 20
 )
 
 // plugin bootstrap
@@ -36,7 +36,8 @@ func main() {
 		use.NewUseCollector(),
 		pluginName,
 		pluginVersion,
-		plugin.Exclusive(true),
-		plugin.CacheTTL(1*time.Second),
+		plugin.GRPCServerOptions(grpc.MaxMsgSize(maxMessageSize)),
+		plugin.GRPCServerOptions(grpc.MaxSendMsgSize(maxMessageSize)),
+		plugin.GRPCServerOptions(grpc.MaxRecvMsgSize(maxMessageSize)),
 	)
 }

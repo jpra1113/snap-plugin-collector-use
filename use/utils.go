@@ -8,13 +8,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/host"
 )
 
 func readLines(filename string) ([]string, error) {
 	f, err := os.Open(filename)
 	if err != nil {
-		return []string{""}, err
+		return []string{""}, errors.Errorf("Unable to open file %s: %s", filename, err.Error())
 	}
 	defer f.Close()
 
@@ -43,7 +44,7 @@ func run(cmd string, args []string) ([]byte, error) {
 	var b bytes.Buffer
 	command.Stdout = &b
 	if err := command.Run(); err != nil {
-		return nil, err
+		return nil, errors.Errorf("Failed to run cmd %s: %s", cmd, err.Error())
 	}
 	return b.Bytes(), nil
 }
@@ -51,7 +52,7 @@ func run(cmd string, args []string) ([]byte, error) {
 func readInt(filename string) (int64, error) {
 	f, err := os.Open(filename)
 	if err != nil {
-		return 0, err
+		return 0, errors.Errorf("Unable to open file %s: %s", filename, err.Error())
 	}
 	defer f.Close()
 
@@ -60,24 +61,24 @@ func readInt(filename string) (int64, error) {
 	// The int files that this is concerned with should only be one liners.
 	line, err := r.ReadString('\n')
 	if err != nil {
-		return 0, err
+		return 0, errors.Errorf("Unable to read string: %s", err.Error())
 	}
 
-	i, err := strconv.ParseInt(strings.TrimSpace(line), 10, 32)
+	trimmedLine := strings.TrimSpace(line)
+	i, err := strconv.ParseInt(trimmedLine, 10, 32)
 	if err != nil {
-		return 0, err
+		return 0, errors.Errorf("Unable to parse int from line %s: %s", trimmedLine, err.Error())
 	}
 
 	return i, nil
 }
 
 func hostTags() (map[string]string, error) {
-
 	tags := make(map[string]string)
 
 	hostInfo, err := host.Info()
 	if err != nil {
-		return tags, err
+		return tags, errors.Errorf("Unable to get host info: %s", err.Error())
 	}
 
 	tags["hostname"] = hostInfo.Hostname
