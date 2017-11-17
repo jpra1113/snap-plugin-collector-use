@@ -68,8 +68,17 @@ func listDisks() []string {
 	if err != nil {
 		return []string{}
 	}
-	ret := strings.Split(string(output), "\n")
-	return ret
+	disks := []string{}
+	for _, disk := range strings.Split(string(output), "\n") {
+		parts := strings.Split(disk, " ")
+		if len(parts) == 1 {
+			// We assume a multipart string is not a supported disk
+			// e.g: "lsblk: dm-0: failed to get device path"
+			disks = append(disks, disk)
+		}
+	}
+
+	return disks
 }
 
 func readStatForDisk(diskName string, statType string, diskStatPath string) (int64, error) {
