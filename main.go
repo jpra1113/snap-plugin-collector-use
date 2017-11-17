@@ -20,7 +20,7 @@ package main
 
 import (
 	"github.com/aasssddd/snap-plugin-lib-go/v1/plugin"
-	"github.com/intelsdi-x/snap-plugin-collector-use/use"
+	"github.com/hyperpilotio/snap-plugin-collector-use/use"
 	"google.golang.org/grpc"
 )
 
