@@ -20,12 +20,10 @@ package use
 
 import (
 	"errors"
-	"os"
 	"path/filepath"
 	"regexp"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/aasssddd/snap-plugin-lib-go/v1/plugin"
 )
 
@@ -66,14 +64,9 @@ func NewUseCollector() *Use {
 }
 
 func (u *Use) init(cfg plugin.Config) {
-	f, err := os.OpenFile("/tmp/intel-collector-use", os.O_WRONLY|os.O_CREATE, 0666)
-	if err == nil {
-		log.SetOutput(f)
-	}
-
 	procPath, err := cfg.GetString("proc_path")
 	if err != nil {
-		procPath = "/proc_host"
+		procPath = "/proc"
 	}
 
 	u.ProcPath = procPath
@@ -157,6 +150,6 @@ func (u *Use) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 //GetConfigPolicy returns a ConfigPolicy
 func (u *Use) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	policy := plugin.NewConfigPolicy()
-	policy.AddNewStringRule([]string{"intel", "use"}, "proc_path", false, plugin.SetDefaultString("/proc_host"))
+	policy.AddNewStringRule([]string{"intel", "use"}, "proc_path", false, plugin.SetDefaultString("/proc"))
 	return *policy, nil
 }
