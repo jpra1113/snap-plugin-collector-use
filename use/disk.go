@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/aasssddd/snap-plugin-lib-go/v1/plugin"
 	"github.com/pkg/errors"
 )
@@ -82,12 +83,21 @@ func listDisks() []string {
 }
 
 func readStatForDisk(diskName string, statType string, diskStatPath string) (int64, error) {
+	if diskName == "" {
+		log.Warningf("Empty diskName")
+		return 0, nil
+	}
+
 	lines, err := readLines(diskStatPath)
 	if err != nil {
 		return 0, err
 	}
+
 	for _, line := range lines {
 		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
 		if diskName == fields[2] {
 			switch statType {
 			case "timeio":
@@ -98,7 +108,7 @@ func readStatForDisk(diskName string, statType string, diskStatPath string) (int
 		}
 	}
 
-	return 0, fmt.Errorf("Can't find a disk %s.\n", diskName)
+	return 0, fmt.Errorf("Can't find a disk [%s].\n", diskName)
 }
 
 func (u *Use) diskStat(ns plugin.Namespace) (*plugin.Metric, error) {
