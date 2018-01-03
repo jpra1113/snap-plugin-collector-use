@@ -1,4 +1,4 @@
-package: github.com/intelsdi-x/snap-plugin-collector-use
+package: github.com/hyperpilotio/snap-plugin-collector-use
 import:
 - package: github.com/intelsdi-x/snap
   version: ^2.0.0
@@ -14,6 +14,19 @@ import:
   - cpu
   - host
   - net
+- package: github.com/jpra1113/snap-plugin-lib-go
+- package: golang.org/x/net
+  version: 054b33e6527139ad5b1ec2f6232c3b175bd9a30c
+  subpackages:
+  - context
+  - http2
+  - http2/hpack
+  - idna
+  - internal/timeseries
+  - lex/httplex
+  - trace
+- package: google.golang.org/grpc
+  version: ^v1.4
 testImport:
 - package: github.com/smartystreets/goconvey
   version: ^1.6.2
