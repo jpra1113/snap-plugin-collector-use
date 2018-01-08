@@ -36,6 +36,10 @@ const (
 	version = 1
 
 	waitTime = 10 * time.Millisecond
+
+	PluginName = "use"
+
+	PluginVersion = 1
 )
 
 var (
